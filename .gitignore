@@ -16,3 +16,4 @@ build/
 out/
 config*
 .venv/
+!README.md
