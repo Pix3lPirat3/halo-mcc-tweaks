@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import core
 import layout
 
-ALL = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth']
-DEFAULT = [m for m in ALL if m != 'stack_growth']
+ALL = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth', 'render_map', 'frame_budget']
+DEFAULT = ALL  # the full set (trial19); drop stack_growth, render_map, frame_budget for the trial16 set
 REQUIRED = ['havok', 'placements', 'objects', 'guards', 'draw_registry']  # they share one memory layout
 
 
@@ -36,11 +36,11 @@ def main():
         raise SystemExit('input is not the original build 738dd2d2')
     b = core.Build(img, mods)
     b.bounds = [t for t in a.bounds.split(',') if t] if a.bounds is not None else None
-    layout.apply(b)
     for m in mods:
         b.cur = m
         importlib.import_module('mods.' + m).apply(b)
     b.cur = 'layout'
+    layout.apply(b)
     layout.info(b)
     out = b.finish()
     n, soi = core.verify_pe(out)

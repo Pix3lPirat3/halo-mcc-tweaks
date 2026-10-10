@@ -161,6 +161,7 @@ class Build:
         self.gsc = bytearray(b'\xcc' * GSC_SIZE)
         self.gsc_used = []
         self.cur = None
+        self.gsy_size = GSY_SIZE
 
     def enabled(self, name):
         return name in self.mods
@@ -211,6 +212,12 @@ class Build:
 
     def blob(self, off, b):
         self._gsc_put(off, bytes(b))
+
+    def gsy_grow(self, n):
+        """append n zero bytes to .gsy and return the rva of the new block"""
+        va = GSY_VA + self.gsy_size
+        self.gsy_size += n
+        return va
 
     def drop(self, tag):
         """remove the patches of another mod that carry this tag"""
