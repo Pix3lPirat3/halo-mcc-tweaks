@@ -24,14 +24,17 @@ To undo: put the backup back, or verify game files in Steam.
 Output is `out\haloreach.dll`. Use `--mods a,b,c` to pick mods (see `build.py`).
 
 ## Player limit (optional)
-Mods that push the player limit past 16 (tested to 32 players, with HUD). They are not in the default build. Build them on top of the default set:
+Mods that push the player limit past 16, to 32 or to 64. They are not in the default build. Build them on top of the default set:
 
     python build.py --dll path\to\original\haloreach.dll --out out --mods default,players
+    python build.py --dll path\to\original\haloreach.dll --out out --mods default,players64
 
-Each one fixes one system that is stock 16 wide. They are separate so other modders can see what has to be addressed:
-- players: players datum, simulated input region and one index bound, 16 to 32.
-- user_map: player to local user map and its mask table, so players 20 and up are not taken for local users.
-- player_update: per tick update tables (action flags, respawn list) and action entries for players 16 to 31.
+`players` is the 32 player set. `players64` is the same mods at 64 players plus the four fixes marked below. Pick one, not both. The fixes also work on their own, for the 32 set add `players_extra`.
+
+Each mod fixes one system that is stock 16 wide. They are separate so other modders can see what has to be addressed:
+- players: players datum, simulated input region and one index bound, 16 to 32 or 64.
+- user_map: player to local user map and its mask table, so players 20 and up are not taken for local users. At 64 the block grows to 0x298 bytes and its later fields move.
+- player_update: per tick update tables (action flags, respawn list) and action entries for players 16 and up (a 64 bit mask at 64).
 - script_lists: script lists of players and team players stop at 16 entries.
 - megalo: gametype script records, player references, random order and traits only see players 0 to 15.
 - player_records: control record and player registration skip index 16 and up.
@@ -39,13 +42,18 @@ Each one fixes one system that is stock 16 wide. They are separate so other modd
 - event_index: 4 bit player index in network events no longer turns into a boot event.
 - glue_index: glue handle index 12 bits on the wire.
 - havok_proxies: physics proxy pool 16 to 64.
-- hud_players: HUD per player array 16 to 32.
+- hud_players: HUD per player array 16 to 32 or 64.
+- rank_list (fix): player ranking list stops at 16 entries. Past 32 it overran the collision pair cache and hung the game at about 50 players.
+- forge_update (fix): Forge per player update skips player 16 and up, it wrote into the score block.
+- megalo_callbacks (fix): per tick gametype script callbacks treat index 16 and up as no player.
 
-Not done:
-- Bots and host side tools are not included, nothing here creates players or feeds them input.
-- Real networked players, session peer slots, spawning entry 31 and 33 or more players are open.
+Open:
+- Real networked players and session peer slots. Nothing here creates players or feeds them input.
+- Other gametype script readers of the 16 record array are not guarded (read only so far).
+- Scoreboard rows stop at 24.
+- More than 64 players.
 - Players 16 and up have no gametype traits, scores or statistics.
-- Offline and custom games only. Built and checked against the original DLL, not yet played with the other mods here.
+- Not tested with real gametypes. Offline and custom games only. Built and checked against the original DLL, not yet played with the other mods here.
 
 ## Notes
 - Offline and custom games only.
