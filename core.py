@@ -99,6 +99,8 @@ def _alt(b):
     return bytes(out)
 
 
+_JCC = {'jo': 0x80, 'jno': 0x81, 'jb': 0x82, 'jae': 0x83, 'je': 0x84, 'jne': 0x85, 'jbe': 0x86, 'ja': 0x87,
+        'js': 0x88, 'jns': 0x89, 'jp': 0x8a, 'jnp': 0x8b, 'jl': 0x8c, 'jge': 0x8d, 'jle': 0x8e, 'jg': 0x8f}
 _STORE = {0x00, 0x01, 0x08, 0x09, 0x10, 0x11, 0x18, 0x19, 0x20, 0x21, 0x28, 0x29, 0x30, 0x31, 0x38, 0x39, 0x88, 0x89}
 
 
@@ -162,6 +164,7 @@ class Build:
         self.gsc_used = []
         self.cur = None
         self.gsy_size = GSY_SIZE
+        self._pr = None  # padding runs of .text, found on first use
 
     def enabled(self, name):
         return name in self.mods
@@ -197,6 +200,80 @@ class Build:
 
     def raw(self, fo, new, was, tag=None):
         self._add(fo, hx(new), hx(was), tag)
+
+    def hook(self, rva, n, cave, tag=None):
+        """replace the n bytes (whole instructions) at rva by a jump to cave, padded with nops"""
+        fo = self.rva2fo(rva)
+        was = dis(self.img[fo:fo + n], rva)
+        assert was is not None and n >= 5, 'bad hook window at 0x%x' % rva
+        text = 'jmp 0x%x' % cave
+        rest = n - 5
+        while rest > 0:  # canonical nops, never a single byte behind a 9 byte one
+            k = 8 if rest - 9 == 1 else min(rest, 9)
+            text += '; ' + ('nop' if k == 1 else 'nop%d' % k)
+            rest -= k
+        self.code(rva, text, was, tag)
+
+    def pcode(self, text, minrun=16):
+        """code of any length in the 0xcc padding between functions of .text (lowest free runs first, every run but the last ends with a
+        near jmp to the next one). Branches and calls use the near form. Labels are local to the text. Returns the address of the first instruction."""
+        items = _stmts(text)
+        names = [s for k, s in items if k == 'label']
+        far = self.secs[0][1] + 0x800000
+
+        def branch(s):
+            mn, _, op = s.partition(' ')
+            op = op.strip()
+            if (mn in ('jmp', 'call') or mn in _JCC) and (op in names or re.fullmatch(r'0x[0-9a-f]+', op)):
+                return mn, op
+            return None
+
+        def enc(s, addr, labels):
+            br = branch(s)
+            if br is None:
+                return asm('~' + s, addr)
+            mn, op = br
+            tgt = labels[op] if op in labels else int(op, 16)
+            head = bytes([0xe9]) if mn == 'jmp' else bytes([0xe8]) if mn == 'call' else bytes([0x0f, _JCC[mn]])
+            return head + struct.pack('<i', tgt - (addr + len(head) + 4))
+        size = {i: len(enc(s, far, {n: far for n in names})) for i, (k, s) in enumerate(items) if k == 'ins'}
+        if self._pr is None:
+            name, va, vs, rp, rs = [x for x in self.secs if x[0] == '.text'][0]
+            self._pr = [(va + m.start(), len(m.group())) for m in re.finditer(rb'\xcc{6,}', self.img[rp:rp + min(vs, rs)])]
+        runs = [(a, ln) for a, ln in self._pr if ln >= minrun and all(
+            self.rva2fo(a) + ln <= o['fo'] or self.rva2fo(a) >= o['fo'] + len(o['new']) for o in self.ops)]
+        segs, i, ri = [], 0, 0
+        while i < len(items):
+            assert ri < len(runs), 'no padding run left for %d bytes of code' % sum(size.values())
+            a, ln = runs[ri]
+            ri += 1
+            rest = sum(size.get(j, 0) for j in range(i, len(items)))
+            cap = ln if rest <= ln else ln - 5
+            used, seg = 0, []
+            while i < len(items) and (items[i][0] == 'label' or used + size[i] <= cap):
+                used += size.get(i, 0)
+                seg.append(items[i])
+                i += 1
+            if seg:
+                segs.append((a, seg))
+        labels = {}
+        for a, seg in segs:
+            pc = a
+            for k, s in seg:
+                if k == 'label':
+                    labels[s] = pc
+                else:
+                    pc += len(enc(s, a, {n: far for n in names}))
+        for si, (a, seg) in enumerate(segs):
+            code, pc = b'', a
+            for k, s in seg:
+                if k == 'ins':
+                    code += enc(s, pc, labels)
+                    pc = a + len(code)
+            if si + 1 < len(segs):
+                code += enc('jmp 0x%x' % segs[si + 1][0], pc, labels)
+            self._add(self.rva2fo(a), code, b'\xcc' * len(code), None)
+        return segs[0][0]
 
     def _gsc_put(self, off, b):
         end = off + len(b)
