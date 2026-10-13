@@ -1,8 +1,9 @@
-"""Per tick player update (0x47050): three fixed 16 entry structures. The action flag table has 16 dwords and is written for every player of the datum, the respawn candidate list is 16 entries on the stack and ends at the stack cookie, and the update struct that carries each player's action entry has 16 entries. The first two are cut at 16 so nothing is overwritten, players 16 to 31 take their action entry from a 32 slot block in .gsy (a mask dword and 16 entries of 0xa8 bytes) that an outside writer has to fill, with no entry they stay idle."""
+"""Per tick player update (0x47050): three fixed 16 entry structures. The action flag table has 16 dwords and is written for every player of the datum, the respawn candidate list is 16 entries on the stack and ends at the stack cookie, and the update struct that carries each player's action entry has 16 entries. The first two are cut at 16 so nothing is overwritten, players 16 and up take their action entry from a block in .gsy (a mask and one entry of 0xa8 bytes per player, 16 entries for 32 players, 48 with the players64 group where the mask is a qword) that an outside writer has to fill, with no entry they stay idle."""
 
 
 def apply(b):
-    blk = b.gsy_grow(0x1000)
+    n = b.nplayers
+    blk = b.gsy_grow((0x10 + (n - 16) * 0xa8 + 0xfff) & ~0xfff)
     mask, ent = blk, blk + 0x10
     # flag table write [rbx + index*4] only for index < 16
     cave = b.pcode("""
@@ -39,17 +40,17 @@ def apply(b):
         add rbx, rdi
         jmp 0x47639
         hi16:
-        cmp ecx, 0x20
+        cmp ecx, %#x
         jae 0x479e7
         mov edx, ecx
         sub edx, 0x10
         lea rax, [rva %#x]
-        mov eax, dword ptr [rax]
-        bt eax, edx
+        %s
+        %s
         jae 0x479e7
         imul rbx, rdx, 0xa8
         lea rax, [rva %#x]
         add rbx, rax
         jmp 0x47639
-    """ % (mask, ent))
+    """ % (n, mask, 'mov eax, dword ptr [rax]' if n <= 32 else 'mov rax, qword ptr [rax]', 'bt eax, edx' if n <= 32 else 'bt rax, rdx', ent))
     b.hook(0x47616, 35, cave)
