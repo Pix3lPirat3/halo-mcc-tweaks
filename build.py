@@ -13,8 +13,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import core
 import layout
 
-ALL = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth', 'render_map', 'frame_budget']
-DEFAULT = ALL  # the full set (trial19); drop stack_growth, render_map, frame_budget for the trial16 set
+BASE = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth', 'render_map', 'frame_budget']
+PLAYERS = ['players', 'user_map', 'player_update', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'hud_players']
+ALL = BASE + PLAYERS
+DEFAULT = BASE  # the full set (trial19); drop stack_growth, render_map, frame_budget for the trial16 set
 REQUIRED = ['havok', 'placements', 'objects', 'guards', 'draw_registry']  # they share one memory layout
 
 
@@ -22,13 +24,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dll', default=os.environ.get('HALO_REACH_DLL'), help='original haloreach.dll (build 738dd2d2)')
     ap.add_argument('--out', default=os.environ.get('HALO_REACH_OUT'), help='output file or folder')
-    ap.add_argument('--mods', default=','.join(DEFAULT), help='comma separated: ' + ','.join(ALL))
+    ap.add_argument('--mods', default=','.join(DEFAULT), help='comma separated: ' + ','.join(ALL) + '; "default" is the first twelve, "players" is the player limit set (not in the default)')
     ap.add_argument('--bounds', default=None, help='boundary toggle ids (default T1,T2,T4a,T4b,T5)')
     a = ap.parse_args()
     if not a.dll or not a.out:
         raise SystemExit('need --dll and --out')
-    mods = [m for m in ALL if m in a.mods.split(',')]
-    bad = [m for m in a.mods.split(',') if m and m not in ALL]
+    want = [x for m in a.mods.split(',') for x in {'default': DEFAULT, 'players': PLAYERS}.get(m, [m])]
+    mods = [m for m in ALL if m in want]
+    bad = [m for m in want if m and m not in ALL]
     if bad or [m for m in REQUIRED if m not in mods]:
         raise SystemExit('unknown or missing modules: %s' % ','.join(bad or [m for m in REQUIRED if m not in mods]))
     img = open(a.dll, 'rb').read()
