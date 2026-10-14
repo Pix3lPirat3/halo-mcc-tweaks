@@ -1,4 +1,4 @@
-"""Player statistics: three functions (0xfa5a0, 0xfa6cc, 0xfe75c) and the first stage of the statistics add function (0xfa458) index a static table with 16 entries by the raw player index. For an index of 16 or more they would read and write past that table. They now return at once for such a player (the read functions give none), so players 16 and up have no statistics. The table itself is not widened. Meant for builds where megalo_records lets the registration of players 16 and up run."""
+"""Player statistics: three functions (0xfa5a0, 0xfa6cc, 0xfe75c) and the first stage of the statistics add function (0xfa458) index a static table with 16 entries by the raw player index. For an index of 16 or more they would read and write past that table. They now return at once for such a player (the read functions give none), so players 16 and up have no statistics. The table itself is not widened. Meant for builds where megalo_records lets the registration of players 16 and up run. Test state: tested offline with scripted players together with megalo_records; not tested in a real lobby yet."""
 
 
 def apply(b):

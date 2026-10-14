@@ -1,3 +1,12 @@
+# Branch dev (experimental)
+
+This branch shows work in progress. It holds everything on player-limit plus changes that ran offline with scripted players at 128 but have not run in a real lobby. Expect rough edges:
+- Tested offline only: Forge at 128 players, Slayer at 128, and Slayer, Juggernaut, Swat, Elite Slayer and Escalation at 64 (Escalation also at 128).
+- Not tested in a real lobby. An earlier build of the event change crashed the game when a lobby cloned a game variant; the fix is only tested with an emulator.
+- Incomplete: statistics, scoreboard rows past 24, spawning when every spawn point is blocked, real networked players, objective gametypes, and two record readers that still use the old array.
+- Builds may crash or desync with stock peers and with other builds. Do not use them online with other people. Everyone in a game needs the same DLL.
+- Each mod docstring ends with its test state.
+
 # halo-mcc-tweaks
 
 Patches for haloreach.dll (Halo Reach in MCC). Works with MCC 1.3528 only (original DLL sha256 738dd2d24ea3aea12e1ee9aa4a61094bf116027d42004c35a19e5048608b0894).
