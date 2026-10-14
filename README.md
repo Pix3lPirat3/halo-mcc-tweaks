@@ -51,6 +51,7 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - respawn_rule (fix): players 16 and up read the respawn rule from other memory and could stay dead for minutes. They now get no wait rule.
 - state_regions (fix): the allocator that hands out game state memory never checks the end of a region. With many players the player tables fill region 4 and what sits behind it is overwritten: pools wrap, the game thread stops, and pools above 127 or 135 entries crash. This grows regions 4 and 1 of the game state (123 sites). Used by players64 and players128.
 - score_list (fix): the list of scores written for the leading score has room for 18 entries and no bound. From 19 present players in Slayer it overwrote the stack check and the game closed. It stops at 16 entries.
+- score_block (fix, 128 only): the score block holds 16 player scores and the team scores and flags sit right behind them. With 128 players a kill ended Slayer at once. At 128 the block is replaced by a bigger one and 43 instructions that address the team scores and flags are moved.
 
 Open:
 - Real networked players and session peer slots. Nothing here creates players or feeds them input.
