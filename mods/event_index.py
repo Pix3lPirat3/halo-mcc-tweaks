@@ -1,4 +1,4 @@
-"""Player index in the network event stream: the presence event encoder writes the event kind (2 bits) and the player index (4 bits) without a mask, so index 16 turns a presence update into a boot event and the local machine is kicked from its own session. The optional player index writer has the same unmasked write and loses bit alignment. The encoder now refuses to encode an index of 16 or above, and the optional writer maps such an index to none."""
+"""Player index in the network event stream: the presence event encoder writes the event kind (2 bits) and the player index (4 bits) without a mask, so index 16 turns a presence update into a boot event (in tests it named the first player, and it may remove the local machine from its own session, which is a hypothesis). The optional player index writer has the same unmasked write and loses bit alignment. The encoder now refuses to encode an index of 16 or above, and the optional writer maps such an index to none."""
 
 
 def apply(b):

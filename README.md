@@ -49,7 +49,7 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - forge_update (fix): Forge per player update skips player 16 and up, it wrote into the score block.
 - megalo_callbacks (fix): per tick gametype script callbacks, the record initialiser, the player index change and the navpoint functions treat index 16 and up as no player.
 - respawn_rule (fix): players 16 and up read the respawn rule from other memory and could stay dead for minutes. They now get no wait rule.
-- state_regions (fix): the allocator that hands out game state memory never checks the end of a region. With many players the player tables fill region 4 and what sits behind it is overwritten: pools wrap, the game thread stops, and pools above 127 or 135 entries crash. This grows regions 4 and 1 of the game state (about 190 sites). Used by players64 and players128.
+- state_regions (fix): the allocator that hands out game state memory never checks the end of a region. With many players the player tables fill region 4 and what sits behind it is overwritten: pools wrap, the game thread stops, and pools above 127 or 135 entries crash. This grows regions 4 and 1 of the game state (123 sites). Used by players64 and players128.
 
 Open:
 - Real networked players and session peer slots. Nothing here creates players or feeds them input.
@@ -57,7 +57,7 @@ Open:
 - Scoreboard rows stop at 24.
 - More than 128 players.
 - Players 16 and up have no gametype traits, scores or statistics.
-- Not tested with real gametypes. Offline and custom games only. The 128 set and the new mods are built and checked against the original DLL, not yet played here.
+- The 128 set ran offline with scripted players in Forge and in Slayer. Nothing here has been tried in an online lobby. Offline and custom games only.
 
 ## Notes
 - Offline and custom games only.
