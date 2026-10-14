@@ -14,9 +14,10 @@ import core
 import layout
 
 BASE = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth', 'render_map', 'frame_budget']
-PLAYERS = ['players', 'user_map', 'player_update', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'hud_players']
-EXTRA = ['rank_list', 'forge_update', 'megalo_callbacks']  # fixes that also apply past 16 players, with 32 or 64
-ALL = BASE + PLAYERS + EXTRA
+PLAYERS = ['players', 'user_map', 'player_update', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'screen_effects', 'hud_players']
+EXTRA = ['rank_list', 'forge_update', 'megalo_callbacks', 'respawn_rule']  # fixes that also apply past 16 players, with 32 or 64
+POST = ['state_regions']  # runs after all other mods
+ALL = BASE + PLAYERS + EXTRA + POST
 DEFAULT = BASE  # the full set (trial19); drop stack_growth, render_map, frame_budget for the trial16 set
 REQUIRED = ['havok', 'placements', 'objects', 'guards', 'draw_registry']  # they share one memory layout
 
@@ -25,15 +26,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dll', default=os.environ.get('HALO_REACH_DLL'), help='original haloreach.dll (build 738dd2d2)')
     ap.add_argument('--out', default=os.environ.get('HALO_REACH_OUT'), help='output file or folder')
-    ap.add_argument('--mods', default=','.join(DEFAULT), help='comma separated: ' + ','.join(ALL) + '; "default" is the first twelve, "players" is the 32 player set, "players64" the same set at 64 players plus "players_extra" (spawn, ranking, Forge and Megalo callback fixes), none of them in the default')
+    ap.add_argument('--mods', default=','.join(DEFAULT), help='comma separated: ' + ','.join(ALL) + '; "default" is the first twelve, "players" is the 32 player set, "players64" the same set at 64 players plus "players_extra" (respawn rule, ranking, Forge and Megalo callback fixes) and the state_regions mod, "players128" the same at 128 players, none of them in the default')
     ap.add_argument('--bounds', default=None, help='boundary toggle ids (default T1,T2,T4a,T4b,T5)')
     a = ap.parse_args()
     if not a.dll or not a.out:
         raise SystemExit('need --dll and --out')
-    groups = {'default': DEFAULT, 'players': PLAYERS, 'players64': PLAYERS + EXTRA, 'players_extra': EXTRA}
+    groups = {'default': DEFAULT, 'players': PLAYERS, 'players64': PLAYERS + EXTRA + POST, 'players128': PLAYERS + EXTRA + POST, 'players_extra': EXTRA}
     names = a.mods.split(',')
-    if 'players' in names and 'players64' in names:
-        raise SystemExit('players and players64 exclude each other')
+    if len([x for x in ('players', 'players64', 'players128') if x in names]) > 1:
+        raise SystemExit('players, players64 and players128 exclude each other')
     want = [x for m in names for x in groups.get(m, [m])]
     mods = [m for m in ALL if m in want]
     bad = [m for m in want if m and m not in ALL]
@@ -43,9 +44,9 @@ def main():
     if core.sha(img) != core.ORIG_SHA:
         raise SystemExit('input is not the original build 738dd2d2')
     b = core.Build(img, mods)
-    b.nplayers = 64 if 'players64' in names else 32  # width of the player mods
+    b.nplayers = 128 if 'players128' in names else 64 if 'players64' in names else 32  # width of the player mods
     b.bounds = [t for t in a.bounds.split(',') if t] if a.bounds is not None else None
-    for m in mods:
+    for m in [m for m in mods if m not in POST] + [m for m in mods if m in POST]:
         b.cur = m
         importlib.import_module('mods.' + m).apply(b)
     b.cur = 'layout'
