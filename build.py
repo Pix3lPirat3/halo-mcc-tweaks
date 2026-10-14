@@ -15,7 +15,7 @@ import layout
 
 BASE = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth', 'render_map', 'frame_budget']
 PLAYERS = ['players', 'user_map', 'player_update', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'screen_effects', 'hud_players']
-EXTRA = ['rank_list', 'forge_update', 'megalo_callbacks', 'respawn_rule']  # fixes that also apply past 16 players, with 32 or 64
+EXTRA = ['rank_list', 'forge_update', 'megalo_callbacks', 'respawn_rule', 'score_list']  # fixes that also apply past 16 players, with 32 or 64
 POST = ['state_regions']  # runs after all other mods
 ALL = BASE + PLAYERS + EXTRA + POST
 DEFAULT = BASE  # the full set (trial19); drop stack_growth, render_map, frame_budget for the trial16 set

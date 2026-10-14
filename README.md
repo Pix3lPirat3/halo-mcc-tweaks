@@ -50,6 +50,7 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - megalo_callbacks (fix): per tick gametype script callbacks, the record initialiser, the player index change and the navpoint functions treat index 16 and up as no player.
 - respawn_rule (fix): players 16 and up read the respawn rule from other memory and could stay dead for minutes. They now get no wait rule.
 - state_regions (fix): the allocator that hands out game state memory never checks the end of a region. With many players the player tables fill region 4 and what sits behind it is overwritten: pools wrap, the game thread stops, and pools above 127 or 135 entries crash. This grows regions 4 and 1 of the game state (123 sites). Used by players64 and players128.
+- score_list (fix): the list of scores written for the leading score has room for 18 entries and no bound. From 19 present players in Slayer it overwrote the stack check and the game closed. It stops at 16 entries.
 
 Open:
 - Real networked players and session peer slots. Nothing here creates players or feeds them input.
