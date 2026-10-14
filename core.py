@@ -14,6 +14,8 @@ GSC_SIZE = 0xe00
 GSX_VA = 0x4eda000   # havok heap and placement extras (uninitialised)
 GSY_VA = 0x5ce8000   # object tables, save queue, draw pools (uninitialised)
 GSY_SIZE = 0x2ca3000
+REGION4_GROW = 0x40000  # game state region 4 growth of the state_regions mod
+REGION1_GROW = 0x10000  # game state region 1 growth of the state_regions mod
 
 _CS = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
 _KS = keystone.Ks(keystone.KS_ARCH_X86, keystone.KS_MODE_64)
@@ -163,7 +165,9 @@ class Build:
         self.gsc = bytearray(b'\xcc' * GSC_SIZE)
         self.gsc_used = []
         self.cur = None
-        self.gsy_size = GSY_SIZE
+        self.r4g = REGION4_GROW if 'state_regions' in self.mods else 0
+        self.r1g = REGION1_GROW if 'state_regions' in self.mods else 0
+        self.gsy_size = GSY_SIZE + 2 * (self.r4g + self.r1g)  # the blocks behind the saved state move up by twice the growth
         self._pr = None  # padding runs of .text, found on first use
 
     def enabled(self, name):
@@ -295,6 +299,22 @@ class Build:
         va = GSY_VA + self.gsy_size
         self.gsy_size += n
         return va
+
+    def bump(self, rva, delta):
+        """add delta to the dword at rva inside a patch recorded by an earlier mod, or patch the original dword when no mod touched it"""
+        fo = self.rva2fo(rva)
+        for o in self.ops:
+            if o['fo'] <= fo and fo + 4 <= o['fo'] + len(o['new']):
+                k = fo - o['fo']
+                v = (struct.unpack_from('<I', o['new'], k)[0] + delta) & 0xffffffff
+                o['new'] = o['new'][:k] + struct.pack('<I', v) + o['new'][k + 4:]
+                return
+        raise SystemExit('no patch holds the dword at 0x%x' % rva)
+
+    def gsc_bump(self, off, delta):
+        """add delta to the dword at .gsc offset off"""
+        v = (struct.unpack_from('<I', self.gsc, off)[0] + delta) & 0xffffffff
+        struct.pack_into('<I', self.gsc, off, v)
 
     def drop(self, tag):
         """remove the patches of another mod that carry this tag"""
