@@ -29,8 +29,9 @@ Mods that push the player limit past 16, to 32, 64 or 128. They are not in the d
     python build.py --dll path\to\original\haloreach.dll --out out --mods default,players
     python build.py --dll path\to\original\haloreach.dll --out out --mods default,players64
     python build.py --dll path\to\original\haloreach.dll --out out --mods default,players128
+    python build.py --dll path\to\original\haloreach.dll --out out --mods default,players128,megalo128
 
-`players` is the 32 player set. `players64` and `players128` are the same mods at 64 and 128 players plus the fixes marked below and the state_regions mod. Pick one of the three. The fixes also work on their own, for the 32 set add `players_extra`.
+`players` is the 32 player set. `players64` and `players128` are the same mods at 64 and 128 players plus the fixes marked below and the state_regions mod. Pick one of the three. `megalo128` goes on top of `players128` (not on its own) and takes the place of the megalo and megalo_callbacks guards. The fixes also work on their own, for the 32 set add `players_extra`.
 
 Each mod fixes one system that is stock 16 wide. They are separate so other modders can see what has to be addressed:
 - players: players datum, simulated input region and one index bound, 16 to 32 or 64.
@@ -52,14 +53,17 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - state_regions (fix): the allocator that hands out game state memory never checks the end of a region. With many players the player tables fill region 4 and what sits behind it is overwritten: pools wrap, the game thread stops, and pools above 127 or 135 entries crash. This grows regions 4 and 1 of the game state (123 sites). Used by players64 and players128.
 - score_list (fix): the list of scores written for the leading score has room for 18 entries and no bound. From 19 present players in Slayer it overwrote the stack check and the game closed. It stops at 16 entries.
 - score_block (fix, 128 only): the score block holds 16 player scores and the team scores and flags sit right behind them. With 128 players a kill ended Slayer at once. At 128 the block is replaced by a bigger one and 43 instructions that address the team scores and flags are moved.
+- megalo_records (megalo128): gametype script records, variables, timers and loops for players 16 to 127 (40 record instructions, 6 loops, the random order list, the navpoint mask, 27 Forge sandbox row instructions and 5 variable readers).
+- stats_guard (megalo128): the statistics functions that use the raw player index skip players 16 and up, so those players have no statistics.
 
 Open:
 - Real networked players and session peer slots. Nothing here creates players or feeds them input.
 - Three gametype script readers of the 16 record array are not guarded (they only read).
 - Scoreboard rows stop at 24.
 - More than 128 players.
-- Players 16 and up have no gametype traits, scores or statistics.
-- The 128 set ran offline with scripted players in Forge and in Slayer. Nothing here has been tried in an online lobby. Offline and custom games only.
+- Players 16 and up have no statistics. Without megalo128 they also have no gametype traits or scores.
+- With megalo128, two instructions in functions without a function record still read the old record array (the free for all team getter at 0x147f94 and the respawn rule at 0x149897, which respawn_rule bypasses).
+- The 128 set ran offline with scripted players in Forge and in Slayer. With megalo128, Slayer, Juggernaut, Swat, Elite Slayer and Escalation ran with 64 players and Escalation with 128. Nothing here has been tried in an online lobby, and megalo128 is the least tested part. Offline and custom games only.
 
 ## Notes
 - Offline and custom games only.

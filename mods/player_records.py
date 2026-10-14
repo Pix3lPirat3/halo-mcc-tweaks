@@ -1,4 +1,4 @@
-"""Per player records that exist once per slot for 16 players: the control record array in the world (16 x 0xe0, followed by another array) and the player added registration (announcer, gametype, score and statistics records are 16 wide). Creating or registering a player of index 16 or above would write into the next array. These entry points now return at once for such an index, so those players have no control record and no score or statistics entry."""
+"""Per player records that exist once per slot for 16 players: the control record array in the world (16 x 0xe0, followed by another array) and the player added registration (announcer, gametype, score and statistics records are 16 wide). Creating or registering a player of index 16 or above would write into the next array. These entry points now return at once for such an index, so those players have no control record and no score or statistics entry. With megalo_records the two registration guards are left out, the control record guard stays."""
 
 
 def apply(b):
@@ -13,6 +13,8 @@ def apply(b):
         ret
     """)
     b.hook(0x3c0ad8, 5, cave)
+    if b.enabled('megalo_records'):  # records exist for players 16 to 127, so they register
+        return
     # player added registration: handle in cx
     cave = b.pcode("""
         movzx eax, cx
