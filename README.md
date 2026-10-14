@@ -64,6 +64,7 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - score_block (fix, 128 only): the score block holds 16 player scores and the team scores and flags sit right behind them. With 128 players a kill ended Slayer at once. At 128 the block is replaced by a bigger one and 43 instructions that address the team scores and flags are moved.
 - megalo_records (megalo128): gametype script records, variables, timers and loops for players 16 to 127 (40 record instructions, 6 loops, the random order list, the navpoint mask, 27 Forge sandbox row instructions and 5 variable readers).
 - stats_guard (megalo128): the statistics functions that use the raw player index skip players 16 and up, so those players have no statistics.
+- events128 (dev128): player index up to 127 in the optional player fields of events (7 bits for five event types, a copy of the original 4 bit writer for six other callers). Changes the wire format. An earlier version crashed in a real lobby when a game variant was cloned; this fix is only tested with an emulator.
 
 Open:
 - Real networked players and session peer slots. Nothing here creates players or feeds them input.

@@ -17,9 +17,10 @@ BASE = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 
 PLAYERS = ['players', 'user_map', 'player_update', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'screen_effects', 'hud_players']
 EXTRA = ['rank_list', 'forge_update', 'megalo_callbacks', 'respawn_rule', 'score_list', 'score_block']  # fixes that also apply past 16 players, with 32 or 64 (score_block only acts at 128)
 MEGALO128 = ['megalo_records', 'stats_guard']  # gametype script records for players 16 to 127, add to players128
+DEV128 = ['events128']  # experimental, dev branch only: add to players128 and megalo128
 REPLACED_BY_MEGALO128 = ['megalo', 'megalo_callbacks']  # player guards that megalo_records makes unnecessary
 POST = ['state_regions']  # runs after all other mods
-ALL = BASE + PLAYERS + EXTRA + MEGALO128 + POST
+ALL = BASE + PLAYERS + EXTRA + MEGALO128 + DEV128 + POST
 DEFAULT = BASE  # the full set (trial19); drop stack_growth, render_map, frame_budget for the trial16 set
 REQUIRED = ['havok', 'placements', 'objects', 'guards', 'draw_registry']  # they share one memory layout
 
@@ -28,16 +29,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dll', default=os.environ.get('HALO_REACH_DLL'), help='original haloreach.dll (build 738dd2d2)')
     ap.add_argument('--out', default=os.environ.get('HALO_REACH_OUT'), help='output file or folder')
-    ap.add_argument('--mods', default=','.join(DEFAULT), help='comma separated: ' + ','.join(ALL) + '; "default" is the first twelve, "players" is the 32 player set, "players64" the same set at 64 players plus "players_extra" (respawn rule, ranking, Forge and Megalo callback fixes) and the state_regions mod, "players128" the same at 128 players, "megalo128" gametype script records for players 16 to 127 on top of players128 (it leaves out the megalo and megalo_callbacks guards), none of them in the default')
+    ap.add_argument('--mods', default=','.join(DEFAULT), help='comma separated: ' + ','.join(ALL) + '; "default" is the first twelve, "players" is the 32 player set, "players64" the same set at 64 players plus "players_extra" (respawn rule, ranking, Forge and Megalo callback fixes) and the state_regions mod, "players128" the same at 128 players, "megalo128" gametype script records for players 16 to 127 on top of players128 (it leaves out the megalo and megalo_callbacks guards), "dev128" experimental mods (7 bit events, ranking, navpoint markers, team audience) on top of players128 and megalo128, none of them in the default')
     ap.add_argument('--bounds', default=None, help='boundary toggle ids (default T1,T2,T4a,T4b,T5)')
     a = ap.parse_args()
     if not a.dll or not a.out:
         raise SystemExit('need --dll and --out')
-    groups = {'default': DEFAULT, 'players': PLAYERS, 'players64': PLAYERS + EXTRA + POST, 'players128': PLAYERS + EXTRA + POST, 'players_extra': EXTRA, 'megalo128': MEGALO128}
+    groups = {'default': DEFAULT, 'players': PLAYERS, 'players64': PLAYERS + EXTRA + POST, 'players128': PLAYERS + EXTRA + POST, 'players_extra': EXTRA, 'megalo128': MEGALO128, 'dev128': DEV128}
     names = a.mods.split(',')
     if len([x for x in ('players', 'players64', 'players128') if x in names]) > 1:
         raise SystemExit('players, players64 and players128 exclude each other')
     want = [x for m in names for x in groups.get(m, [m])]
+    if any(m in want for m in DEV128) and not ('players128' in names and 'megalo128' in names):
+        raise SystemExit('dev128 needs players128 and megalo128')
     if 'megalo_records' in want:
         if 'players128' not in names:
             raise SystemExit('megalo128 needs players128')
