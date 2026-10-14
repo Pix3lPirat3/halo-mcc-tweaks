@@ -1,4 +1,4 @@
-"""Per tick player update (0x47050): three fixed 16 entry structures. The action flag table has 16 dwords and is written for every player of the datum, the respawn candidate list is 16 entries on the stack and ends at the stack cookie, and the update struct that carries each player's action entry has 16 entries. The first two are cut at 16 so nothing is overwritten, players 16 and up take their action entry from a block in .gsy (a mask and one entry of 0xa8 bytes per player, 16 entries for 32 players, 48 with the players64 group where the mask is a qword) that an outside writer has to fill, with no entry they stay idle."""
+"""Per tick player update (0x47050): three fixed 16 entry structures. The action flag table has 16 dwords and is written for every player of the datum, the respawn candidate list is 16 entries on the stack and ends at the stack cookie, and the update struct that carries each player's action entry has 16 entries. The first two are cut at 16 so nothing is overwritten, players 16 and up take their action entry from a block in .gsy (a mask and one entry of 0xa8 bytes per player, 16 entries for 32 players, 48 with the players64 group where the mask is a qword, 112 with players128 where it is a bit string) that an outside writer has to fill, with no entry they stay idle."""
 
 
 def apply(b):
@@ -52,5 +52,6 @@ def apply(b):
         lea rax, [rva %#x]
         add rbx, rax
         jmp 0x47639
-    """ % (n, mask, 'mov eax, dword ptr [rax]' if n <= 32 else 'mov rax, qword ptr [rax]', 'bt eax, edx' if n <= 32 else 'bt rax, rdx', ent))
+    """ % (n, mask, 'mov eax, dword ptr [rax]' if n <= 32 else ('mov rax, qword ptr [rax]' if n <= 64 else 'nop'),
+          'bt eax, edx' if n <= 32 else ('bt rax, rdx' if n <= 64 else 'bt qword ptr [rax], rdx'), ent))
     b.hook(0x47616, 35, cave)
