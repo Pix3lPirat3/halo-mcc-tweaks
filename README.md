@@ -66,6 +66,7 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - stats_guard (megalo128): the statistics functions that use the raw player index skip players 16 and up, so those players have no statistics.
 - events128 (dev128): player index up to 127 in the optional player fields of events (7 bits for five event types, a copy of the original 4 bit writer for six other callers). Changes the wire format. An earlier version crashed in a real lobby when a game variant was cloned; this fix is only tested with an emulator.
 - ranking (dev128): ranking for 128 players: the players section of the standings function is replaced by one that walks all 128 players and writes place codes by player index into a table. Needs score_block.
+- navpoint_markers (dev128): the navpoint manager no longer writes in front of itself when all 20 slots are used, and the line of sight cycle covers players 16 to 127 (the second part needs megalo_records).
 
 Open:
 - Real networked players and session peer slots. Nothing here creates players or feeds them input.
