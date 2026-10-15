@@ -14,7 +14,7 @@ import core
 import layout
 
 BASE = ['havok', 'placements', 'respawn', 'objects', 'guards', 'draw_registry', 'lighting_cache', 'boundaries', 'bone_clamp', 'stack_growth', 'render_map', 'frame_budget']
-PLAYERS = ['players', 'user_map', 'player_update', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'screen_effects', 'hud_players']
+PLAYERS = ['players', 'user_map', 'player_update', 'update_guard', 'script_lists', 'megalo', 'player_records', 'presence_records', 'event_index', 'glue_index', 'havok_proxies', 'screen_effects', 'hud_players']
 EXTRA = ['rank_list', 'forge_update', 'megalo_callbacks', 'respawn_rule', 'score_list', 'score_block']  # fixes that also apply past 16 players, with 32 or 64 (score_block only acts at 128)
 MEGALO128 = ['megalo_records', 'stats_guard']  # gametype script records for players 16 to 127, add to players128
 DEV128 = ['events128', 'ranking', 'navpoint_markers', 'team_audience']  # experimental, dev branch only: add to players128 and megalo128
