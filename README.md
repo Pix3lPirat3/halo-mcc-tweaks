@@ -36,7 +36,7 @@ Each mod fixes one system that is stock 16 wide. They are separate so other modd
 - players: players datum, simulated input region and one index bound, 16 to 32 or 64.
 - user_map: player to local user map and its mask table, so players 20 and up are not taken for local users. At 64 the block grows to 0x298 bytes and its later fields move, at 128 it is 0x4d8 bytes.
 - player_update: per tick update tables (action flags, respawn list) and action entries for players 16 and up (a 64 bit mask at 64, a bit string at 128).
-- update_guard (fix): the per tick player update message holds 16 entries. With a client in the game, players 16 and up read past it and the host crashed at player 65. These players now have no entry in the message.
+- update_guard (fix): the per tick player update message holds 16 entries. Players 16 and up now have no entry in it. Needed with a client in the game above 64 players.
 - script_lists: script lists of players and team players stop at 16 entries.
 - megalo: gametype script records, player references, random order and traits only see players 0 to 15.
 - player_records: control record and player registration skip index 16 and up.
